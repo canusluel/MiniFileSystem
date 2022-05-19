@@ -135,14 +135,10 @@ FAT_OPEN_FILE * mini_file_open(FAT_FILESYSTEM *fs, const char *filename, const b
 			return NULL;
 		}
 	}else{
+		// TODO: check if other write handles are open.
 		if(is_write && fd->open_handles.size() != 0){
 			return NULL;
 		}
-	}
-
-	if (!is_write) {
-		// TODO: check if other write handles are open.
-		
 	}
 
 	FAT_OPEN_FILE * open_file;
@@ -186,9 +182,45 @@ bool mini_file_close(FAT_FILESYSTEM *fs, const FAT_OPEN_FILE * open_file)
 int mini_file_write(FAT_FILESYSTEM *fs, FAT_OPEN_FILE * open_file, const int size, const void * buffer)
 {
 	int written_bytes = 0;
+	int block_index = 0;
 
 	// TODO: write to file.
-	
+	printf("%d", open_file->file->block_ids.size());
+	if(open_file->file->block_ids.size() == 0){
+		block_index = mini_fat_find_empty_block(fs);
+		open_file->file->block_ids.push_back(block_index);
+	}else{
+		block_index = open_file->file->block_ids[0];
+	}
+
+	printf("%d", block_index);
+	if(block_index == -1){
+		printf("No empty block");
+	}else{
+		//setting open_file position to block_index*block_size to keep the current position of data writing
+		open_file->position = block_index*(fs->block_size);
+		open_file->position += open_file->file->size;
+		//setting block's type to occupied
+		fs->block_map[block_index] = FILE_DATA_BLOCK;
+
+		while(written_bytes < size){
+			//if current block's size is full, searches for new empty block
+			//and sets current position to that blocks start point
+			if(open_file->file->size % (fs->block_size + 1) == 0){
+				block_index = mini_fat_find_empty_block(fs);
+				//if(block_index == -1) return written_bytes;
+				open_file->position = block_index*(fs->block_size);
+				open_file->position += open_file->file->size;
+				fs->block_map[block_index] = FILE_DATA_BLOCK;
+			}
+				//incrementing written bytes and current position as writing continues
+				open_file->file->size++;
+				written_bytes++;
+				open_file->position += open_file->file->size;
+			
+		}
+	}
+
 	return written_bytes;
 }
 
@@ -235,7 +267,7 @@ bool mini_file_delete(FAT_FILESYSTEM *fs, const char *filename)
 	}else{
 		if(fd->open_handles.size() == 0){
 			for(int i = 0; i<fd->block_ids.size(); i++){
-				fs->block_map[fd->block_ids[i]] = 0;
+				fs->block_map[fd->block_ids[i]] = EMPTY_BLOCK;
 			}
 			return true;
 		}else{
