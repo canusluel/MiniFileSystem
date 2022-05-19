@@ -190,7 +190,7 @@ int mini_file_write(FAT_FILESYSTEM *fs, FAT_OPEN_FILE * open_file, const int siz
 		block_index = mini_fat_find_empty_block(fs);
 		open_file->file->block_ids.push_back(block_index);
 	}else{
-		block_index = open_file->file->block_ids[0];
+		block_index = open_file->file->block_ids.back();
 	}
 
 	printf("%d", block_index);
@@ -206,17 +206,20 @@ int mini_file_write(FAT_FILESYSTEM *fs, FAT_OPEN_FILE * open_file, const int siz
 		while(written_bytes < size){
 			//if current block's size is full, searches for new empty block
 			//and sets current position to that blocks start point
-			if(open_file->file->size % (fs->block_size + 1) == 0){
+
+			//incrementing written bytes and current position as writing continues
+			open_file->file->size++;
+			written_bytes++;
+			open_file->position += open_file->file->size;
+			
+			if(open_file->file->size % (fs->block_size) == 0){
 				block_index = mini_fat_find_empty_block(fs);
 				//if(block_index == -1) return written_bytes;
+				open_file->file->block_ids.push_back(block_index);
 				open_file->position = block_index*(fs->block_size);
 				open_file->position += open_file->file->size;
 				fs->block_map[block_index] = FILE_DATA_BLOCK;
 			}
-				//incrementing written bytes and current position as writing continues
-				open_file->file->size++;
-				written_bytes++;
-				open_file->position += open_file->file->size;
 			
 		}
 	}
