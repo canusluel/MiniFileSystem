@@ -1,13 +1,16 @@
 #include <stdio.h>
 #include <string.h>
 #include <stddef.h>
-
+#include <cassert>
 #include <list>
+#include <stdlib.h>
+#include <fstream>
+#include <iostream>
 
 #include "fat.h"
 #include "fat_file.h"
 
-
+using namespace std;
 /**
  * Write inside one block in the filesystem.
  * @param  fs           filesystem
@@ -46,7 +49,7 @@ int mini_fat_read_in_block(FAT_FILESYSTEM *fs, const int block_id, const int blo
 	int read = 0;
 
 	// TODO: read from the real file.
-
+	
 	return read;
 }
 
@@ -57,7 +60,10 @@ int mini_fat_read_in_block(FAT_FILESYSTEM *fs, const int block_id, const int blo
  */
 int mini_fat_find_empty_block(const FAT_FILESYSTEM *fat) {
 	// TODO: find an empty block in fat and return its index.
-
+	int i = 0;
+	for(i; i<fat->block_map.size(); i++){
+		if(fat->block_map[i] == 0) return i;
+	}
 	return -1;
 }
 
@@ -112,7 +118,11 @@ FAT_FILESYSTEM * mini_fat_create(const char * filename, const int block_size, co
 
 	FAT_FILESYSTEM * fat = mini_fat_create_internal(filename, block_size, block_count);
 
-	// TODO: create the corresponding virtual disk file with appropriate size.
+	// TODO: create the corresponding virtual disk file with appropriate size
+	ofstream ofs(filename, ios::out);
+    ofs.seekp((block_count*block_size) << 3);
+    ofs.write("0", 1);
+	ofs.close();
 	return fat;
 }
 
@@ -132,7 +142,9 @@ bool mini_fat_save(const FAT_FILESYSTEM *fat) {
 		return false;
 	}
 	// TODO: save all metadata (filesystem metadata, file metadata).
-
+	
+	fprintf(fat_fd, "%c", fat->block_map[0]);
+	fclose(fat_fd);
 	return true;
 }
 
@@ -146,6 +158,6 @@ FAT_FILESYSTEM * mini_fat_load(const char *filename) {
 
 	int block_size = 1024, block_count = 10;
 	FAT_FILESYSTEM * fat = mini_fat_create_internal(filename, block_size, block_count);
-
+	
 	return fat;
 }

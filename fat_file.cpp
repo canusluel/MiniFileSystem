@@ -1,5 +1,9 @@
 #include "fat.h"
 #include "fat_file.h"
+#include <cstdarg>
+#include <cstdio>
+#include <cstring>
+#include <cassert>
 
 // Little helper to show debug messages. Set 1 to 0 to silence.
 #define DEBUG 1
@@ -16,6 +20,7 @@ inline void debug(const char * fmt, ...) {
 template<typename T>
 static void vector_delete_index(std::vector<T> &vector, const int index) {
 	vector.erase(vector.begin() + index);
+	
 }
 
 // Find var and delete from vector.
@@ -121,22 +126,40 @@ int mini_file_size(FAT_FILESYSTEM *fs, const char *filename) {
  */
 FAT_OPEN_FILE * mini_file_open(FAT_FILESYSTEM *fs, const char *filename, const bool is_write)
 {
-	FAT_FILE * fd = mini_file_find(fs, filename);
-	if (!fd) {
+	FAT_FILE * fd = mini_file_find(fs, filename);	
+	if (fd == NULL) {
 		// TODO: check if it's write mode, and if so create it. Otherwise return NULL.
-		return NULL;
+		if (is_write) {
+			fd = mini_file_create_file(fs, filename);
+		}else{
+			return NULL;
+		}
+	}else{
+		if(is_write && fd->open_handles.size() != 0){
+			return NULL;
+		}
 	}
 
-	if (is_write) {
+	if (!is_write) {
 		// TODO: check if other write handles are open.
-		return NULL;
+		
 	}
 
-	FAT_OPEN_FILE * open_file = new FAT_OPEN_FILE;
-	// TODO: assign open_file fields.
+	FAT_OPEN_FILE * open_file;
+	if (fd != NULL) {
+		open_file = new FAT_OPEN_FILE;
+		// TODO: assign open_file fields.
+		FILE * fd_txt = fopen(filename, "w");
+		open_file->file = fd;
+		open_file->is_write = is_write;
+		open_file->position = fd->metadata_block_id;
 
-	// Add to list of open handles for fd:
-	fd->open_handles.push_back(open_file);
+		// Add to list of open handles for fd:
+		fd->open_handles.push_back(open_file);
+		fclose(fd_txt);
+	}else{
+		return NULL;
+	}
 	return open_file;
 }
 
@@ -165,7 +188,7 @@ int mini_file_write(FAT_FILESYSTEM *fs, FAT_OPEN_FILE * open_file, const int siz
 	int written_bytes = 0;
 
 	// TODO: write to file.
-
+	
 	return written_bytes;
 }
 
@@ -205,6 +228,18 @@ bool mini_file_seek(FAT_FILESYSTEM *fs, FAT_OPEN_FILE * open_file, const int off
 bool mini_file_delete(FAT_FILESYSTEM *fs, const char *filename)
 {
 	// TODO: delete file after checks.
-
-	return false;
+	FAT_FILE * fd = mini_file_find(fs, filename);	
+	if (fd == NULL) {
+		printf("%s\n", "File is not found");
+		return false;
+	}else{
+		if(fd->open_handles.size() == 0){
+			for(int i = 0; i<fd->block_ids.size(); i++){
+				fs->block_map[fd->block_ids[i]] = 0;
+			}
+			return true;
+		}else{
+			return false;
+		}
+	}
 }

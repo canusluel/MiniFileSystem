@@ -1,5 +1,8 @@
 #include "fat.h"
 #include "fat_file.h"
+#include <cstring>
+#include <cstdio>
+#include <cstdarg>
 
 const char * fox = "The quick brown fox jumps over the lazy dog.\n";
 
@@ -303,7 +306,6 @@ int main()
 	FAT_FILESYSTEM * fs = mini_fat_create("fs1.fat", 1024, 10);
 
 	test_small_filesystem(mini_fat_create("temp.fat", 128, 3)); // Only 3 blocks, 1 metadata, 2 files.
-
 	test_suite(fs);
 
 	if (current_score == total_score) {
