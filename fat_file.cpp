@@ -4,7 +4,9 @@
 #include <cstdio>
 #include <cstring>
 #include <cassert>
-
+#include <fstream>
+#include <iostream>
+using namespace std;
 // Little helper to show debug messages. Set 1 to 0 to silence.
 #define DEBUG 1
 inline void debug(const char * fmt, ...) {
@@ -127,10 +129,13 @@ int mini_file_size(FAT_FILESYSTEM *fs, const char *filename) {
 FAT_OPEN_FILE * mini_file_open(FAT_FILESYSTEM *fs, const char *filename, const bool is_write)
 {
 	FAT_FILE * fd = mini_file_find(fs, filename);	
+	FILE * fd_txt;
 	if (fd == NULL) {
 		// TODO: check if it's write mode, and if so create it. Otherwise return NULL.
 		if (is_write) {
 			fd = mini_file_create_file(fs, filename);
+			fd_txt = fopen(filename, "w");
+			fclose(fd_txt);
 		}else{
 			return NULL;
 		}
@@ -145,7 +150,7 @@ FAT_OPEN_FILE * mini_file_open(FAT_FILESYSTEM *fs, const char *filename, const b
 	if (fd != NULL) {
 		open_file = new FAT_OPEN_FILE;
 		// TODO: assign open_file fields.
-		FILE * fd_txt = fopen(filename, "w");
+		fd_txt = fopen(filename, "r+");
 		open_file->file = fd;
 		open_file->is_write = is_write;
 		open_file->position = fd->metadata_block_id;
@@ -183,8 +188,7 @@ int mini_file_write(FAT_FILESYSTEM *fs, FAT_OPEN_FILE * open_file, const int siz
 {
 	int written_bytes = 0;
 	int block_index = 0;
-
-	FILE * fd_txt = fopen(open_file->file->name, "r+");
+	FILE * fd_txt = fopen(open_file->file->name, "rw+");
 	fprintf(fd_txt, "%s", buffer);
 	fclose(fd_txt);
 	// TODO: write to file.
@@ -211,7 +215,7 @@ int mini_file_write(FAT_FILESYSTEM *fs, FAT_OPEN_FILE * open_file, const int siz
 			//incrementing written bytes and current position as writing continues
 			open_file->file->size++;
 			written_bytes++;
-			open_file->position += open_file->file->size;
+			open_file->position++;
 
 			if(open_file->file->size % (fs->block_size) == 0){
 				block_index = mini_fat_find_empty_block(fs);
@@ -235,10 +239,25 @@ int mini_file_write(FAT_FILESYSTEM *fs, FAT_OPEN_FILE * open_file, const int siz
 int mini_file_read(FAT_FILESYSTEM *fs, FAT_OPEN_FILE * open_file, const int size, void * buffer)
 {
 	int read_bytes = 0;
+        // TODO: read file.
+        //      char f[100] = open_file->file->name;
+				if(open_file->file->size == 0) return read_bytes;
+                ifstream file(open_file->file->name);
+                file.read((char*)buffer, size);
+				
+				if(open_file->position == 1){
+					open_file->position = 0;
+				}
+				while (read_bytes < size){
 
-	// TODO: read file.
-
-	return read_bytes;
+					read_bytes++;
+					open_file->position++;
+					if(open_file->position == open_file->file->size){
+						
+						return read_bytes;
+					} 
+				}
+        return read_bytes;
 }
 
 
@@ -251,8 +270,21 @@ int mini_file_read(FAT_FILESYSTEM *fs, FAT_OPEN_FILE * open_file, const int size
 bool mini_file_seek(FAT_FILESYSTEM *fs, FAT_OPEN_FILE * open_file, const int offset, const bool from_start)
 {
 	// TODO: seek and return true.
-
-	return false;
+	if(from_start == false){
+		if(open_file->position + offset <= open_file->file->size && open_file->position + offset >= 0){
+			open_file->position += offset;
+			return true;
+		}else{
+			return false;
+		} 
+	}else{
+		if(offset <= open_file->file->size && offset >= 0){
+			open_file->position = offset;
+			return true;
+		}else{
+			return false;
+		}
+	}
 }
 
 /**
