@@ -142,8 +142,8 @@ bool mini_fat_save(const FAT_FILESYSTEM *fat) {
 		return false;
 	}
 	// TODO: save all metadata (filesystem metadata, file metadata).
-	
-	fprintf(fat_fd, "%c", fat->block_map[0]);
+	int block_size = 1024, block_count = 10;
+	fwrite(&fat, block_size, block_count, fat_fd);
 	fclose(fat_fd);
 	return true;
 }
@@ -155,9 +155,8 @@ FAT_FILESYSTEM * mini_fat_load(const char *filename) {
 		exit(-1);
 	}
 	// TODO: load all metadata (filesystem metadata, file metadata) and create filesystem.
-
 	int block_size = 1024, block_count = 10;
-	FAT_FILESYSTEM * fat = mini_fat_create_internal(filename, block_size, block_count);
-	
+	FAT_FILESYSTEM * fat = mini_fat_create(filename, block_size, block_count);
+	fread(&fat->block_map[0], block_size, block_count, fat_fd);
 	return fat;
 }

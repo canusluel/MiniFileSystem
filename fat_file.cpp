@@ -134,7 +134,7 @@ FAT_OPEN_FILE * mini_file_open(FAT_FILESYSTEM *fs, const char *filename, const b
 		// TODO: check if it's write mode, and if so create it. Otherwise return NULL.
 		if (is_write) {
 			fd = mini_file_create_file(fs, filename);
-			fd_txt = fopen(filename, "w");
+			fd_txt = fopen(filename, "wb");
 			fclose(fd_txt);
 		}else{
 			return NULL;
@@ -150,7 +150,7 @@ FAT_OPEN_FILE * mini_file_open(FAT_FILESYSTEM *fs, const char *filename, const b
 	if (fd != NULL) {
 		open_file = new FAT_OPEN_FILE;
 		// TODO: assign open_file fields.
-		fd_txt = fopen(filename, "r+");
+		fd_txt = fopen(filename, "rb+");
 		open_file->file = fd;
 		open_file->is_write = is_write;
 		open_file->position = 0;
@@ -191,7 +191,7 @@ int mini_file_write(FAT_FILESYSTEM *fs, FAT_OPEN_FILE * open_file, const int siz
 	int temp_loc = 0;
 	char s[size];
 	strcpy(s, (char*)buffer);
-	FILE * fd_txt = fopen(open_file->file->name, "r+");
+	FILE * fd_txt = fopen(open_file->file->name, "rb+");
 	// TODO: write to file.
 	if(open_file->file->block_ids.size() == 0){
 		block_index = mini_fat_find_empty_block(fs);
@@ -245,7 +245,7 @@ int mini_file_read(FAT_FILESYSTEM *fs, FAT_OPEN_FILE * open_file, const int size
 {
 	int read_bytes = 0;
 	char s[size];
-	FILE * fd_txt = fopen(open_file->file->name, "r+");
+	FILE * fd_txt = fopen(open_file->file->name, "rb+");
         // TODO: read file.
         //      char f[100] = open_file->file->name;
 				if(open_file->file->size == 0) return read_bytes;
