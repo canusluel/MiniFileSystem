@@ -185,7 +185,6 @@ void test_read_from_file1(FAT_FILESYSTEM * fs) {
 	read = mini_file_read(fs, fd2, 45, buffer);
 	score(read == 45);
 	score(strcmp(buffer, fox) == 0);
-	// printf("\t[%d] %s\n", read, buffer);
 
 	printf("Reading 1 byte from file.\n");
 	memset(buffer, 0, sizeof(buffer));
@@ -195,7 +194,7 @@ void test_read_from_file1(FAT_FILESYSTEM * fs) {
 	printf("Reading the rest of the file.\n");
 	memset(buffer, 0, sizeof(buffer));
 	read = mini_file_read(fs, fd2, 4096, buffer);
-	score(read == 2981); // There's nothing more to read.
+	score(read == 2539); // There's nothing more to read.
 	score(strcmp(buffer+strlen(buffer)-5, "dog.\n") == 0);
 
 
