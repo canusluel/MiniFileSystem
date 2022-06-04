@@ -180,7 +180,6 @@ bool mini_fat_save(const FAT_FILESYSTEM *fat) {
 			char *current_file_bid_char = strcat(strdup(curr_file_bid_str.c_str())," "); 
 			fwrite(current_file_bid_char , strlen(current_file_bid_char) , 1 , fat_fd); 
 		}
-
 	}
 	fclose(fat_fd);
 	return true;
@@ -198,8 +197,7 @@ FAT_FILESYSTEM * mini_fat_load(const char *filename) {
 	// TODO: load all metadata (filesystem metadata, file metadata) and create filesystem.
 	int block_size = 1024, block_count = 10;
 	FAT_FILESYSTEM * fat = mini_fat_create(filename, block_size, block_count);
-	char * fat_map_index;
-	int i = 0;
+	char * fat_map_index;	int i = 0;
 	fread(fat_metadata, 100, 1, fat_fd);
 
 		fat_map_index = strtok (fat_metadata," ");
@@ -214,7 +212,7 @@ FAT_FILESYSTEM * mini_fat_load(const char *filename) {
 			fat_map_index = strtok (NULL, " ");
 
 		}
-	i = 0;
+	int i=0;
 	//add for loop for every file
 	char * current_file_blockids;
 	fseek(fat_fd, block_size, SEEK_SET);
@@ -230,7 +228,6 @@ FAT_FILESYSTEM * mini_fat_load(const char *filename) {
 			current_file->block_ids.push_back(atoi(current_file_blockids));
 			current_file_blockids = strtok (NULL, " ");
 		}
-
 	fclose(fat_fd);
 	return fat;
 }

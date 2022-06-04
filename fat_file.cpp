@@ -315,6 +315,7 @@ bool mini_file_delete(FAT_FILESYSTEM *fs, const char *filename)
 			for(int i = 0; i<fd->block_ids.size(); i++){
 				fs->block_map[fd->block_ids[i]] = EMPTY_BLOCK;
 			}
+			vector_delete_value(fs->files, fd);
 			return true;
 		}else{
 			return false;
