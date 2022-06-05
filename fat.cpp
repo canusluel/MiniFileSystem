@@ -143,7 +143,8 @@ bool mini_fat_save(const FAT_FILESYSTEM *fat) {
 	}
  	char buffer[100];
 	// TODO: save all metadata (filesystem metadata, file metadata).
-	int block_size = 1024, block_count = 10;
+	int block_size = fat->block_size;
+	int block_count = fat->block_count;
 
 	string block_count_str = to_string(block_count);
 	char *block_count_char = strcat(strdup(block_count_str.c_str())," ");
@@ -188,46 +189,56 @@ bool mini_fat_save(const FAT_FILESYSTEM *fat) {
 FAT_FILESYSTEM * mini_fat_load(const char *filename) {
 	FILE * fat_fd = fopen(filename, "rb+");
 	int c;
-	char fat_metadata[100], current_file_data[100];
+	char fat_metadata[100];
 
 	if (fat_fd == NULL) {
 		perror("Cannot load fat from file");
 		exit(-1);
 	}
 	// TODO: load all metadata (filesystem metadata, file metadata) and create filesystem.
-	int block_size = 1024, block_count = 10;
-	FAT_FILESYSTEM * fat = mini_fat_create(filename, block_size, block_count);
-	char * fat_map_index;	int i = 0;
+	int block_size, block_count;
+	char * fat_map_index;	
+	int i = 0;
 	fread(fat_metadata, 100, 1, fat_fd);
+		//getting block size and count from file
+		block_count = atoi(strtok (fat_metadata, " "));
+		block_size = atoi(strtok (NULL, " "));
+		fat_map_index = strtok (NULL," ");
 
-		fat_map_index = strtok (fat_metadata," ");
-		//skipping block size and block count since they are declared above
-		fat_map_index = strtok (NULL, " ");
-		fat_map_index = strtok (NULL, " ");
+		FAT_FILESYSTEM * fat = mini_fat_create(filename, block_size, block_count);
 		//assigning block map
+		int val;
 		while (fat_map_index != NULL)
 		{	
-			fat->block_map.push_back(*fat_map_index);
+			val = atoi(fat_map_index);
+			fat->block_map.at(i) = val;
 			i++;
 			fat_map_index = strtok (NULL, " ");
 
 		}
-	int i=0;
-	//add for loop for every file
-	char * current_file_blockids;
-	fseek(fat_fd, block_size, SEEK_SET);
-	fread(current_file_data, 100, 1, fat_fd);
-	int current_file_size = atoi(strtok(current_file_data," "));
-	char * current_file_name = strtok (NULL, " ");
-	current_file_blockids = strtok (NULL, " ");
-	FAT_FILE *current_file = mini_file_create_file(fat, current_file_name);
-	current_file->size = current_file_size;
-		//assigning block map
-		while (current_file_blockids != NULL)
-		{	
-			current_file->block_ids.push_back(atoi(current_file_blockids));
+	//for every file in system, adding their metadata
+	for (int j = 0; j<block_count; j++){
+		if(fat->block_map.at(j) == 1){
+			char current_file_data[100];
+			char * current_file_blockids;
+			fseek(fat_fd, block_size*j, SEEK_SET);
+			fread(current_file_data, 100, 1, fat_fd);
+			int current_file_size = atoi(strtok(current_file_data," "));
+			char * current_file_name = strtok (NULL, " ");
 			current_file_blockids = strtok (NULL, " ");
+			//erasing the metadata block id data from blockmap so it can be declared in mini_file_create_file function
+			fat->block_map.at(j) = EMPTY_BLOCK;
+			FAT_FILE *current_file = mini_file_create_file(fat, current_file_name);
+			current_file->size = current_file_size;
+				//assigning block map
+				while (current_file_blockids != NULL)
+				{	
+					current_file->block_ids.push_back(atoi(current_file_blockids));
+					current_file_blockids = strtok (NULL, " ");
+				}
+
 		}
+	}
 	fclose(fat_fd);
 	return fat;
 }

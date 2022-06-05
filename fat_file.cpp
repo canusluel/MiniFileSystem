@@ -208,8 +208,6 @@ int mini_file_write(FAT_FILESYSTEM *fs, FAT_OPEN_FILE * open_file, const int siz
 		fs->block_map[block_index] = FILE_DATA_BLOCK;
 		
 		while(written_bytes < size){
-			//if current block's size is full, searches for new empty block
-			//and sets current position to that blocks start point
 
 			//incrementing written bytes and current position as writing continues
 			open_file->file->size++;
@@ -225,8 +223,6 @@ int mini_file_write(FAT_FILESYSTEM *fs, FAT_OPEN_FILE * open_file, const int siz
 					fclose(fd_txt);
 				} 
 				open_file->file->block_ids.push_back(block_index);
-				//open_file->position = block_index*(fs->block_size);
-				//open_file->position += open_file->file->size;
 				fs->block_map[block_index] = FILE_DATA_BLOCK;
 			}
 			
@@ -247,11 +243,8 @@ int mini_file_read(FAT_FILESYSTEM *fs, FAT_OPEN_FILE * open_file, const int size
 	char s[size];
 	FILE * fd_txt = fopen(open_file->file->name, "rb+");
         // TODO: read file.
-        //      char f[100] = open_file->file->name;
 				if(open_file->file->size == 0) return read_bytes;
-                //ifstream file(open_file->file->name, ios::in);
-                //file.read((char*)buffer, size);
-				
+ 
 				while (read_bytes < size){
 					fseek ( fd_txt , open_file->position , SEEK_SET );
 					s[read_bytes] = fgetc(fd_txt);
@@ -312,6 +305,7 @@ bool mini_file_delete(FAT_FILESYSTEM *fs, const char *filename)
 		return false;
 	}else{
 		if(fd->open_handles.size() == 0){
+			fs->block_map[fd->metadata_block_id] = EMPTY_BLOCK;
 			for(int i = 0; i<fd->block_ids.size(); i++){
 				fs->block_map[fd->block_ids[i]] = EMPTY_BLOCK;
 			}

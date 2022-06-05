@@ -253,7 +253,6 @@ void test_seek(FAT_FILESYSTEM * fs) {
 	res = mini_file_seek(fs, fd2, -45, false);
 	score(res == true);
 	read = mini_file_read(fs, fd2, 45, buffer);
-	printf("%s\n", buffer);
 	score(read == 45);
 	score(strcmp(buffer, fox) == 0);
 
